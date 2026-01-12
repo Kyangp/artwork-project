@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Biggest collaborative artwork</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
   </head>
 	
 
@@ -13,7 +17,7 @@
     <!-- Navigation bar -->
     <nav class="navbar">
       <div class="nav-left">
-        <strong>One Million Marks</strong>
+        <h2>One Million Marks</h2>
       </div>
       <div class="nav-right">
         <a href="#">About</a>
@@ -30,7 +34,7 @@
       </section>
 
       <!-- Info panel -->
-      <section class="info-panel">
+      <section class="info-panel container">
         <h1>A million people. One artwork.</h1>
         <p>Each person places one permanent mark.</p>
 
@@ -38,12 +42,12 @@
           <span>0 / 1,000,000 marks placed</span>
         </div>
 
-        <button class="primary-button">Place your mark</button>
+        <button class="primary-button"> <a href="place_mark.html">Place your mark</a></button> 
       </section>
 
       <!-- What is this -->
 
-     <section class="about">
+     <section id="about" class="about container">
       <h2>What is this?</h2>
       <p>This is the internet’s largest collaborative artwork. A single canvas created by people from all over the world, 
         where each participant makes one tiny artistic decision and leaves one permanent mark.</p>
@@ -57,11 +61,29 @@
       </p>
      </section>
 
+     <!-- How it works? -->
+
+     <section is="how" class="how container">
+      <h2>How it works?</h2>
+      <p>The artwork is made up of one million individual marks, placed by one million people. Each participant is invited to place 
+        one single mark on the canvas — a color, a position, a small decision that becomes part of the whole.</p>
+
+      <p>Once a mark is placed, it is permanent. It cannot be moved, edited, or removed. There are no revisions and no second attempts.
+         Every contribution carries the same weight, whether it is the first mark or the last.
+      </p>
+
+      <p>The artwork evolves slowly as people participate. There is no predetermined image and no final plan. The outcome emerges only 
+        through collective action. When the millionth mark is placed, the artwork is complete — and it will never change again.
+      </p>
+     </section>
+
      <!-- Footer -->
-  >
+  
       <footer class="footer">
-        <p>Copyright</p>
-      </footer>
+         <p>© 2026 — One Million Marks</p>
+         <p class="footer-meta">A collaborative artwork initiated by Kyan Gregorc Planinc</p>
+     </footer>
+
     
 
     </main>
