@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Place your mark — One Million Marks</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <strong>One Million Marks</strong>
+    </div>
+    <div class="nav-right">
+      <a href="index.html">Home</a>
+      <a href="index.html#about">About</a>
+      <a href="index.html#how">How it works</a>
+    </div>
+  </nav>
+
+  <main class="main-layout">
+    <!-- Canvas -->
+    <section class="canvas-area">
+      <canvas id="art-canvas"></canvas>
+    </section>
+
+    <!-- Placement UI -->
+    <section class="info-panel">
+      <h1>Place your mark</h1>
+      <p id="canvas-subtitle">Choose a spot. One mark only.</p>
+
+      <div class="progress">
+        <span id="marks-count">0 / 1,000,000 marks placed</span>
+      </div>
+
+      <p id="status-text" class="status-text"></p>
+      <p id="coords-text" class="coords-text"></p>
+    </section>
+
+    <section class="footer">
+      <footer>
+        <p>© 2026 — One Million Marks</p>
+        <p class="footer-meta">A collaborative artwork initiated by Kyan Gregorc Planinc</p>
+      </footer>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

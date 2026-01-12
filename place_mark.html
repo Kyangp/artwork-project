@@ -9,82 +9,65 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  </head>
-
-
-
-    <!-- Navigation bar -->
 
 <body>
-
   <nav class="navbar">
     <div class="nav-left">
       <strong>One Million Marks</strong>
     </div>
     <div class="nav-right">
-      <a href="index.html#about">About</a>
-      <a href="index.html#how">How it works</a>
+      <a href="index.html">Home</a>
     </div>
   </nav>
 
-  <main class="container place-page">
-    <section class="place-card">
+  <main class="place-page">
+    <div class="place-card">
       <h1>Before you place your mark</h1>
       <p class="place-subtitle">
-        This is a one-time contribution. Please read carefully.
+        This is a permanent collaborative artwork. One decision. One mark. No edits.
       </p>
 
       <ul class="place-rules">
-        <li>You will place <strong>one</strong> mark on the canvas.</li>
-        <li>Your mark is <strong>permanent</strong> — it cannot be edited or removed.</li>
-        <li>There are no retries, revisions, or second attempts.</li>
-        <li>For now, participation is limited to <strong>one mark per person</strong>.</li>
+        <li>You can place <strong>one</strong> mark.</li>
+        <li>Once placed, it <strong>cannot</strong> be changed or removed.</li>
+        <li>When the millionth mark is placed, the artwork is complete forever.</li>
       </ul>
 
-      <p class="place-warning">
-        When you confirm, you are choosing to make a small decision that will remain part of the artwork forever.
-      </p>
+      <h2 style="margin-top:28px;">Choose your tier</h2>
 
-      <label class="place-confirm">
-        <input type="checkbox" id="confirmPermanent">
-        <span>I understand that my mark will be permanent.</span>
-      </label>
+      <div class="tier-row" id="tier-row">
+        <button class="tier selected" data-tier="0.99">€0.99 — Anonymous mark</button>
+        <button class="tier" data-tier="1.99">€1.99 — Mark + certificate</button>
+        <button class="tier" data-tier="4.99">€4.99 — Name on hover + certificate</button>
+      </div>
+
+      <h2 style="margin-top:28px;">Choose a color</h2>
+
+      <div class="color-picker" id="color-picker" aria-label="Choose a color">
+        <button class="color-swatch selected" data-color="#f2f2f2" aria-label="White"></button>
+        <button class="color-swatch" data-color="#ff4d4d" aria-label="Red"></button>
+        <button class="color-swatch" data-color="#ffd24d" aria-label="Yellow"></button>
+        <button class="color-swatch" data-color="#4dff88" aria-label="Green"></button>
+        <button class="color-swatch" data-color="#4da6ff" aria-label="Blue"></button>
+        <button class="color-swatch" data-color="#b84dff" aria-label="Purple"></button>
+      </div>
+
+      <div class="place-confirm" style="margin-top:20px;">
+        <input id="confirm" type="checkbox" />
+        <label for="confirm">I understand this mark is permanent.</label>
+      </div>
 
       <div class="place-actions">
         <a class="link-muted" href="index.html">Back</a>
-
-        <!-- For now this can link back to index, later it will go to the real marking UI -->
-        <a class="primary-button disabled" id="continueBtn" href="index.html">Continue</a>
+        <button id="continueBtn" class="primary-button disabled">Continue</button>
       </div>
-    </section>
+
+      <p class="place-warning">
+        Take a second. Choose carefully. Once you place it, it stays.
+      </p>
+    </div>
   </main>
 
-<!-- Footer -->
- 
-<footer class="footer">
-    <p>© 2026 — One Million Marks</p>
-    <p class="footer-meta">A collaborative artwork initiated by Kyan Gregorc Planinc</p>
-  </footer>
-
-  <script>
-    // Tiny JS: enable Continue only after checkbox is checked
-    const checkbox = document.getElementById("confirmPermanent");
-    const btn = document.getElementById("continueBtn");
-
-    checkbox.addEventListener("change", () => {
-      if (checkbox.checked) {
-        btn.classList.remove("disabled");
-      } else {
-        btn.classList.add("disabled");
-      }
-    });
-  </script>
-
+  <script src="script.js"></script>
 </body>
 </html>
-
-
-
-
-
-   </html>
