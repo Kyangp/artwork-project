@@ -13,7 +13,7 @@ function hexToRgba(hex, alpha) {
 }
 
 /* =========================
-   PLACE PAGE LOGIC
+   PLACE PAGE LOGIC (place.html)
 ========================= */
 
 (function initPlacePage() {
@@ -25,7 +25,7 @@ function hexToRgba(hex, alpha) {
   const swatches = colorPicker ? Array.from(colorPicker.querySelectorAll(".color-swatch")) : [];
   const tiers = tierRow ? Array.from(tierRow.querySelectorAll(".tier")) : [];
 
-  // Only run if we are on place.html (elements exist)
+  // Only run on place page
   if (!continueBtn || !confirm || (!swatches.length && !tiers.length)) return;
 
   let selectedTier = "0.99";
@@ -62,7 +62,7 @@ function hexToRgba(hex, alpha) {
   confirm.addEventListener("change", syncContinueState);
   syncContinueState();
 
-  // On continue, store choices and go to canvas.html
+  // Continue -> store choices -> go to canvas page
   continueBtn.addEventListener("click", () => {
     if (!confirm.checked) return;
 
@@ -74,25 +74,33 @@ function hexToRgba(hex, alpha) {
 })();
 
 /* =========================
-   CANVAS PAGE LOGIC
+   CANVAS PAGE LOGIC (canvas.html)
+   Two-step placement:
+   - Click canvas to SELECT a cell
+   - Click "Confirm placement" to place the mark
 ========================= */
 
 (function initCanvasPage() {
   const canvas = document.getElementById("art-canvas");
-  if (!canvas) return; // not on canvas page
+  if (!canvas) return; // Not on canvas page
 
   const ctx = canvas.getContext("2d");
   const cellSize = 20;
 
+  // UI
   const marksCountEl = document.getElementById("marks-count");
   const statusTextEl = document.getElementById("status-text");
   const coordsTextEl = document.getElementById("coords-text");
+  const confirmBtnEl = document.getElementById("confirm-btn");
+  const confirmNoteEl = document.getElementById("confirm-note");
 
-  // load selected color from place page (fallback to white)
+  // Load color chosen on place page (fallback white)
   let chosenColor = localStorage.getItem("omm_color") || "#f2f2f2";
 
-  let hoverCell = null;
-  const marks = new Map();
+  // State
+  let hoverCell = null;      // {x,y}
+  let selectedCell = null;   // {x,y}
+  const marks = new Map();   // key "x,y" -> color
   let hasPlacedMyMark = false;
 
   function resizeCanvas() {
@@ -131,9 +139,28 @@ function hexToRgba(hex, alpha) {
       const [xStr, yStr] = key.split(",");
       const x = Number(xStr);
       const y = Number(yStr);
+
       ctx.fillStyle = color;
       ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
     }
+  }
+
+  // Highlight selected cell (stronger than hover preview)
+  function drawSelectedCell() {
+    if (!selectedCell) return;
+
+    const x = selectedCell.x * cellSize;
+    const y = selectedCell.y * cellSize;
+
+    ctx.fillStyle = hexToRgba(chosenColor, 0.35);
+    ctx.fillRect(x, y, cellSize, cellSize);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.75)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+
+    // Reset lineWidth so grid stays thin after this
+    ctx.lineWidth = 1;
   }
 
   function drawHoverPreview() {
@@ -142,6 +169,9 @@ function hexToRgba(hex, alpha) {
 
     const key = `${hoverCell.x},${hoverCell.y}`;
     if (marks.has(key)) return;
+
+    // Don't draw preview on top of selected cell
+    if (selectedCell && hoverCell.x === selectedCell.x && hoverCell.y === selectedCell.y) return;
 
     const x = hoverCell.x * cellSize;
     const y = hoverCell.y * cellSize;
@@ -157,6 +187,7 @@ function hexToRgba(hex, alpha) {
     drawBackground();
     drawGrid();
     drawMarks();
+    drawSelectedCell();
     drawHoverPreview();
   }
 
@@ -176,23 +207,52 @@ function hexToRgba(hex, alpha) {
       x: Math.floor(mouseX / cellSize),
       y: Math.floor(mouseY / cellSize),
     };
+
     render();
   }
 
-  function placeMark() {
+  // First click: choose a cell
+  function selectCell() {
     if (hasPlacedMyMark) return;
     if (!hoverCell) return;
 
     const key = `${hoverCell.x},${hoverCell.y}`;
+    if (marks.has(key)) return; // can't select a filled cell
+
+    selectedCell = { x: hoverCell.x, y: hoverCell.y };
+
+    // Enable confirm UI
+    if (confirmBtnEl) confirmBtnEl.classList.remove("disabled");
+    if (confirmNoteEl) confirmNoteEl.textContent = "Confirm placement to make it permanent.";
+
+    render();
+  }
+
+  // Second step: confirm button places it
+  function confirmPlacement() {
+    if (hasPlacedMyMark) return;
+    if (!selectedCell) return;
+
+    const key = `${selectedCell.x},${selectedCell.y}`;
     if (marks.has(key)) return;
 
     marks.set(key, chosenColor);
     hasPlacedMyMark = true;
 
-    const placedX = hoverCell.x;
-    const placedY = hoverCell.y;
+    const placedX = selectedCell.x;
+    const placedY = selectedCell.y;
 
+    // Clear selection + hover
+    selectedCell = null;
     hoverCell = null;
+
+    // Lock confirm UI
+    if (confirmBtnEl) {
+      confirmBtnEl.textContent = "Mark placed";
+      confirmBtnEl.classList.add("disabled");
+    }
+    if (confirmNoteEl) confirmNoteEl.textContent = "";
+
     updateCounter();
     render();
 
@@ -202,13 +262,23 @@ function hexToRgba(hex, alpha) {
     console.log(`Placed mark at ${key} with color ${chosenColor}`);
   }
 
+  // If confirm button exists, start it disabled with a hint
+  if (confirmBtnEl) confirmBtnEl.classList.add("disabled");
+  if (confirmNoteEl) confirmNoteEl.textContent = "Click a cell to choose your location.";
+
+  // Events
   canvas.addEventListener("mousemove", updateHoverCell);
   canvas.addEventListener("mouseleave", () => {
     hoverCell = null;
     render();
   });
-  canvas.addEventListener("click", placeMark);
+  canvas.addEventListener("click", selectCell);
 
+  if (confirmBtnEl) {
+    confirmBtnEl.addEventListener("click", confirmPlacement);
+  }
+
+  // Init
   resizeCanvas();
   updateCounter();
   render();
@@ -218,3 +288,4 @@ function hexToRgba(hex, alpha) {
     render();
   });
 })();
+
