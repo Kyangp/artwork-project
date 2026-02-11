@@ -739,4 +739,37 @@ function markKey(x, y) {
     }
     render();
   });
+    // =========================
+  // DEV MODE (local testing only)
+  // =========================
+
+  const DEV_MODE = new URLSearchParams(window.location.search).get("dev") === "1";
+
+  function clearMyLocalMark() {
+    localStorage.removeItem("omm_has_mark");
+    localStorage.removeItem("omm_mark_x");
+    localStorage.removeItem("omm_mark_y");
+    localStorage.removeItem("omm_mark_color");
+  }
+
+  if (DEV_MODE) {
+    const link = document.createElement("a");
+    link.href = "#";
+    link.textContent = "Reset local mark (dev)";
+    link.className = "link-muted";
+    link.style.display = "inline-block";
+    link.style.marginTop = "12px";
+    link.style.fontSize = "13px";
+    link.style.opacity = "0.7";
+
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      clearMyLocalMark();
+      window.location.reload();
+    });
+
+    const panel = document.querySelector(".info-panel");
+    if (panel) panel.appendChild(link);
+  }
+
 })();
