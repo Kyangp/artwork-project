@@ -192,6 +192,37 @@ p {
 a {color:#000;
 text-decoration: none;}
 
+.coord-jump {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.coord-jump input {
+  width: 90px;
+  padding: 10px 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255,255,255,0.02);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.secondary-button {
+  border: 1px solid var(--border-subtle);
+  background: rgba(255,255,255,0.02);
+  color: var(--text-primary);
+  padding: 10px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: rgba(255,255,255,0.05);
+}
 
 
 .container {

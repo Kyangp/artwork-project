@@ -239,6 +239,8 @@ function markKey(x, y) {
    CANVAS PAGE (canvas.html)
    Starts fit-to-view (whole artwork).
    "Begin placement" enters interactive mode with zoom + pan + selection.
+   Adds Jump to coordinates + Copy shareable URL.
+   Adds dev reset mode (?dev=1).
 ========================= */
 
 (async function initCanvasPage() {
@@ -249,14 +251,25 @@ function markKey(x, y) {
 
   const ctx = canvas.getContext("2d");
 
-  const BASE_CELL = 20;
-
-  // UI
+  // UI (existing)
   const marksCountEl = document.getElementById("marks-count");
   const statusTextEl = document.getElementById("status-text");
   const coordsTextEl = document.getElementById("coords-text");
   const confirmNoteEl = document.getElementById("confirm-note");
   const archiveTextEl = document.getElementById("archive-text");
+
+  // Jump + Share UI (new)
+  const jumpXEl = document.getElementById("jump-x");
+  const jumpYEl = document.getElementById("jump-y");
+  const jumpBtnEl = document.getElementById("jump-btn");
+  const copyLinkBtnEl = document.getElementById("copy-link-btn");
+  const jumpNoteEl = document.getElementById("jump-note");
+
+  // ---- Local persistence keys ----
+  const LS_HAS = "omm_has_mark";
+  const LS_X = "omm_mark_x";
+  const LS_Y = "omm_mark_y";
+  const LS_COLOR = "omm_mark_color";
 
   // Grid bounds (default until marks.json loads)
   let GRID_COLS = 1250;
@@ -276,10 +289,11 @@ function markKey(x, y) {
   let placementMode = false; // false = view-only whole artwork
 
   // Camera + zoom
+  const BASE_CELL = 20;
   let scale = 1;         // zoom factor relative to BASE_CELL
-  let cameraX = 0;       // world coords at top-left of view
+  let cameraX = 0;       // world coords at top-left of view (placement mode)
   let cameraY = 0;
-  let offsetX = 0;       // pixel offset for centering (used in fit-to-view mode)
+  let offsetX = 0;       // pixel offset for centering (fit-to-view mode)
   let offsetY = 0;
 
   // Panning state
@@ -287,11 +301,16 @@ function markKey(x, y) {
   let panStartMouse = null;
   let panStartCamera = null;
 
-  // ---- Local persistence keys ----
-  const LS_HAS = "omm_has_mark";
-  const LS_X = "omm_mark_x";
-  const LS_Y = "omm_mark_y";
-  const LS_COLOR = "omm_mark_color";
+  // URL params (shareable)
+  const params = new URLSearchParams(window.location.search);
+  const urlXRaw = Number(params.get("x"));
+  const urlYRaw = Number(params.get("y"));
+  const urlZRaw = Number(params.get("z"));
+  let startFromSharedLink = null; // set after grid is known
+
+  // =========================
+  // Helpers
+  // =========================
 
   function clamp(n, min, max) {
     return Math.max(min, Math.min(max, n));
@@ -308,13 +327,20 @@ function markKey(x, y) {
     canvas.height = Math.floor(rect.height);
   }
 
-  function clampCamera() {
-    const cp = cellPx();
-    const visibleCols = canvas.width / cp;
-    const visibleRows = canvas.height / cp;
+  function visibleCols() {
+    return canvas.width / cellPx();
+  }
 
-    const maxCamX = Math.max(0, GRID_COLS - visibleCols);
-    const maxCamY = Math.max(0, GRID_ROWS - visibleRows);
+  function visibleRows() {
+    return canvas.height / cellPx();
+  }
+
+  function clampCamera() {
+    const vCols = visibleCols();
+    const vRows = visibleRows();
+
+    const maxCamX = Math.max(0, GRID_COLS - vCols);
+    const maxCamY = Math.max(0, GRID_ROWS - vRows);
 
     cameraX = clamp(cameraX, 0, maxCamX);
     cameraY = clamp(cameraY, 0, maxCamY);
@@ -338,65 +364,42 @@ function markKey(x, y) {
     offsetY = Math.floor((canvas.height - worldH) / 2);
   }
 
-  function enterPlacementMode() {
-    placementMode = true;
+  function clampWorldCoord(x, y) {
+    return {
+      x: clamp(x, 0, GRID_COLS - 1),
+      y: clamp(y, 0, GRID_ROWS - 1),
+    };
+  }
 
-    // Comfortable starting zoom: not extreme, but “closer than full view”
-    // You can tweak this later.
-    scale = Math.max(scale, 0.6);
-
-    // Remove centering offsets; placement is camera-based.
-    offsetX = 0;
-    offsetY = 0;
-
+  function setCameraCenteredOn(x, y) {
+    cameraX = x - visibleCols() / 2;
+    cameraY = y - visibleRows() / 2;
     clampCamera();
-
-    beginBtnEl.classList.add("disabled");
-    beginBtnEl.textContent = "Placement mode";
-
-    confirmBtnEl.classList.add("disabled");
-    confirmBtnEl.style.display = "block";
-
-    if (confirmNoteEl) confirmNoteEl.textContent = "Drag to navigate. Click a cell to choose.";
-    render();
   }
 
-  function drawBackground() {
-    ctx.fillStyle = "#1e1e1e";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  function buildShareURL(x, y, z) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("x", String(Math.round(x)));
+    url.searchParams.set("y", String(Math.round(y)));
+    url.searchParams.set("z", String(Number(z).toFixed(3)));
+    return url.toString();
   }
 
-  function drawBorder() {
-    // Only meaningful when fit-to-view is showing whole piece
-    if (placementMode) return;
-
-    const worldW = GRID_COLS * cellPx();
-    const worldH = GRID_ROWS * cellPx();
-
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(offsetX + 0.5, offsetY + 0.5, worldW - 1, worldH - 1);
+  function syncUrlToCurrentView() {
+    // Keep URL quietly in sync with current placement view
+    if (!placementMode) return;
+    const cx = cameraX + visibleCols() / 2;
+    const cy = cameraY + visibleRows() / 2;
+    const newUrl = buildShareURL(cx, cy, scale);
+    window.history.replaceState({}, "", newUrl);
   }
 
-  function drawGrid() {
-    const cp = cellPx();
-    if (cp < 6) return; // too zoomed out -> don’t draw full grid
-
-    ctx.strokeStyle = "rgba(255,255,255,0.06)";
-    ctx.lineWidth = 1;
-
-    // Grid in screen space
-    for (let x = 0; x <= canvas.width; x += cp) {
-      ctx.beginPath();
-      ctx.moveTo(x + 0.5, 0);
-      ctx.lineTo(x + 0.5, canvas.height);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= canvas.height; y += cp) {
-      ctx.beginPath();
-      ctx.moveTo(0, y + 0.5);
-      ctx.lineTo(canvas.width, y + 0.5);
-      ctx.stroke();
+  async function copyTextToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (jumpNoteEl) jumpNoteEl.textContent = "Link copied.";
+    } catch {
+      window.prompt("Copy this link:", text);
     }
   }
 
@@ -404,11 +407,9 @@ function markKey(x, y) {
     const cp = cellPx();
 
     if (!placementMode) {
-      // Fit-to-view mode: no camera, just centered world
       return { sx: offsetX + x * cp, sy: offsetY + y * cp };
     }
 
-    // Placement mode: camera defines top-left world cell
     return { sx: (x - cameraX) * cp, sy: (y - cameraY) * cp };
   }
 
@@ -428,6 +429,47 @@ function markKey(x, y) {
     };
   }
 
+  function cellTaken(x, y) {
+    return canonicalMarks.has(markKey(x, y)) || localMarks.has(markKey(x, y));
+  }
+
+  function drawBackground() {
+    ctx.fillStyle = "#1e1e1e";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function drawBorder() {
+    if (placementMode) return;
+
+    const worldW = GRID_COLS * cellPx();
+    const worldH = GRID_ROWS * cellPx();
+
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(offsetX + 0.5, offsetY + 0.5, worldW - 1, worldH - 1);
+  }
+
+  function drawGrid() {
+    const cp = cellPx();
+    if (cp < 6) return;
+
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x <= canvas.width; x += cp) {
+      ctx.beginPath();
+      ctx.moveTo(x + 0.5, 0);
+      ctx.lineTo(x + 0.5, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= canvas.height; y += cp) {
+      ctx.beginPath();
+      ctx.moveTo(0, y + 0.5);
+      ctx.lineTo(canvas.width, y + 0.5);
+      ctx.stroke();
+    }
+  }
+
   function drawMarks(map) {
     const cp = cellPx();
 
@@ -437,7 +479,6 @@ function markKey(x, y) {
       const y = Number(yStr);
 
       const { sx, sy } = worldToScreen(x, y);
-
       if (sx + cp < 0 || sy + cp < 0 || sx > canvas.width || sy > canvas.height) continue;
 
       ctx.fillStyle = color;
@@ -458,10 +499,6 @@ function markKey(x, y) {
     ctx.lineWidth = 2;
     ctx.strokeRect(sx + 1, sy + 1, cp - 2, cp - 2);
     ctx.lineWidth = 1;
-  }
-
-  function cellTaken(x, y) {
-    return canonicalMarks.has(markKey(x, y)) || localMarks.has(markKey(x, y));
   }
 
   function drawHoverPreview() {
@@ -498,6 +535,51 @@ function markKey(x, y) {
     marksCountEl.textContent = `${canonicalMarks.size.toLocaleString()} / 1,000,000 marks placed`;
   }
 
+  // =========================
+  // Placement Mode
+  // =========================
+
+  function enterPlacementMode() {
+    if (hasPlacedMyMark) return;
+
+    placementMode = true;
+
+    // Remove centering offsets; placement is camera-based.
+    offsetX = 0;
+    offsetY = 0;
+
+    // Start at a comfortable zoom
+    scale = clamp(Math.max(scale, 0.6), 0.2, 5);
+
+    // If opened from shared link, start there
+    if (startFromSharedLink) {
+      if (Number.isFinite(urlZRaw)) {
+        scale = clamp(urlZRaw, 0.2, 5);
+      } else {
+        scale = clamp(Math.max(scale, 1.2), 0.2, 5);
+      }
+      clampCamera();
+      setCameraCenteredOn(startFromSharedLink.x, startFromSharedLink.y);
+
+      if (jumpXEl) jumpXEl.value = String(Math.round(startFromSharedLink.x));
+      if (jumpYEl) jumpYEl.value = String(Math.round(startFromSharedLink.y));
+      if (jumpNoteEl) jumpNoteEl.textContent = `Viewing: (${Math.round(startFromSharedLink.x)}, ${Math.round(startFromSharedLink.y)})`;
+      syncUrlToCurrentView();
+    } else {
+      clampCamera();
+      syncUrlToCurrentView();
+    }
+
+    beginBtnEl.classList.add("disabled");
+    beginBtnEl.textContent = "Placement mode";
+
+    confirmBtnEl.classList.add("disabled");
+    confirmBtnEl.style.display = "block";
+
+    if (confirmNoteEl) confirmNoteEl.textContent = "Drag to navigate. Scroll to zoom. Click a cell to choose.";
+    render();
+  }
+
   function updateHoverCell(event) {
     if (!placementMode) return;
     if (hasPlacedMyMark) return;
@@ -530,6 +612,7 @@ function markKey(x, y) {
     selectedCell = { x: hoverCell.x, y: hoverCell.y };
     confirmBtnEl.classList.remove("disabled");
     if (confirmNoteEl) confirmNoteEl.textContent = "Confirm placement to make it permanent.";
+
     render();
   }
 
@@ -558,16 +641,14 @@ function markKey(x, y) {
 
     confirmBtnEl.textContent = "Mark placed";
     confirmBtnEl.classList.add("disabled");
+    confirmBtnEl.style.display = "none";
 
     if (confirmNoteEl) confirmNoteEl.textContent = "";
     if (statusTextEl) statusTextEl.textContent = "You have already placed your mark.";
     if (coordsTextEl) coordsTextEl.textContent = `Location: (${x}, ${y})`;
     if (archiveTextEl) archiveTextEl.textContent = "Archival publication is not yet enabled.";
 
-    selectedCell = null;
-    hoverCell = null;
-
-    // If you already placed, we can still show the whole artwork view
+    // Return to whole-artwork view
     placementMode = false;
     fitToView();
   }
@@ -597,23 +678,30 @@ function markKey(x, y) {
     if (coordsTextEl) coordsTextEl.textContent = `Location: (${x}, ${y})`;
     if (archiveTextEl) archiveTextEl.textContent = "Archival publication is not yet enabled.";
 
+    // Update URL to your mark (quietly)
+    const url = buildShareURL(x, y, 1.2);
+    window.history.replaceState({}, "", url);
+
     selectedCell = null;
     hoverCell = null;
 
-    // After placing, return to the whole artwork view
+    // Return to whole-artwork view
     placementMode = false;
     fitToView();
-
     render();
   }
 
-  // ---- PANNING (placement mode only) ----
+  // =========================
+  // Panning + Zoom
+  // =========================
+
   function beginPan(event) {
     if (!placementMode) return;
     if (event.button !== 0) return;
 
     isPanning = true;
     const rect = canvas.getBoundingClientRect();
+
     panStartMouse = {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
@@ -633,7 +721,6 @@ function markKey(x, y) {
 
     const cp = cellPx();
 
-    // Drag right moves world right under hand -> camera moves left
     cameraX = panStartCamera.x - dxPx / cp;
     cameraY = panStartCamera.y - dyPx / cp;
 
@@ -642,12 +729,14 @@ function markKey(x, y) {
   }
 
   function endPan() {
+    if (!isPanning) return;
     isPanning = false;
     panStartMouse = null;
     panStartCamera = null;
+
+    syncUrlToCurrentView();
   }
 
-  // ---- ZOOM (wheel, placement mode only) ----
   function onWheelZoom(event) {
     if (!placementMode) return;
     event.preventDefault();
@@ -664,22 +753,83 @@ function markKey(x, y) {
     const zoomIn = event.deltaY < 0;
     const factor = zoomIn ? 1.12 : 0.89;
 
-    // Clamp zoom range (tweak later if you want)
     scale = clamp(scale * factor, 0.2, 5);
 
-    // Keep the same world point under cursor AFTER zoom
+    // Keep same world point under cursor AFTER zoom
     const cpAfter = cellPx();
     cameraX = worldX - mx / cpAfter;
     cameraY = worldY - my / cpAfter;
 
     clampCamera();
+    syncUrlToCurrentView();
     render();
   }
+
+  // =========================
+  // Jump + Share
+  // =========================
+
+  function handleJump() {
+    if (!jumpXEl || !jumpYEl) return;
+
+    const x = Number(jumpXEl.value);
+    const y = Number(jumpYEl.value);
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      if (jumpNoteEl) jumpNoteEl.textContent = "Enter numeric x and y.";
+      return;
+    }
+
+    const target = clampWorldCoord(x, y);
+
+    if (!placementMode && !hasPlacedMyMark) {
+      enterPlacementMode();
+    }
+
+    // Ensure a workable zoom
+    scale = clamp(Math.max(scale, 1), 0.2, 5);
+    clampCamera();
+    setCameraCenteredOn(target.x, target.y);
+
+    const newUrl = buildShareURL(target.x, target.y, scale);
+    window.history.replaceState({}, "", newUrl);
+
+    if (jumpNoteEl) jumpNoteEl.textContent = `Viewing: (${target.x}, ${target.y})`;
+    render();
+  }
+
+  function getCurrentViewForCopy() {
+    if (placementMode) {
+      const cx = cameraX + visibleCols() / 2;
+      const cy = cameraY + visibleRows() / 2;
+      return { x: cx, y: cy, z: scale };
+    }
+
+    const has = localStorage.getItem(LS_HAS) === "1";
+    if (has) {
+      const mx = Number(localStorage.getItem(LS_X));
+      const my = Number(localStorage.getItem(LS_Y));
+      if (Number.isFinite(mx) && Number.isFinite(my)) {
+        return { x: mx, y: my, z: 1.2 };
+      }
+    }
+
+    return { x: GRID_COLS / 2, y: GRID_ROWS / 2, z: scale };
+  }
+
+  async function handleCopyLink() {
+    const v = getCurrentViewForCopy();
+    const link = buildShareURL(v.x, v.y, v.z);
+    await copyTextToClipboard(link);
+  }
+
+  // =========================
+  // Init
+  // =========================
 
   // Initial UI state (starts in whole-artwork view)
   confirmBtnEl.classList.add("disabled");
   confirmBtnEl.style.display = "none";
-
   if (confirmNoteEl) confirmNoteEl.textContent = "Begin placement to enter the artwork.";
 
   // Load canonical dataset (and grid size)
@@ -696,6 +846,11 @@ function markKey(x, y) {
     }
   } catch (err) {
     console.warn(err);
+  }
+
+  // Shared-link target (now that grid is known)
+  if (Number.isFinite(urlXRaw) && Number.isFinite(urlYRaw)) {
+    startFromSharedLink = clampWorldCoord(urlXRaw, urlYRaw);
   }
 
   // Load persisted local mark (if any)
@@ -725,12 +880,16 @@ function markKey(x, y) {
   window.addEventListener("mousemove", movePan);
   window.addEventListener("mouseup", endPan);
 
-  // Wheel zoom (needs { passive: false } to allow preventDefault)
   canvas.addEventListener("wheel", onWheelZoom, { passive: false });
 
+  if (jumpBtnEl) jumpBtnEl.addEventListener("click", handleJump);
+  if (copyLinkBtnEl) copyLinkBtnEl.addEventListener("click", handleCopyLink);
+
+  // Allow pressing Enter in jump inputs
+  if (jumpXEl) jumpXEl.addEventListener("keydown", (e) => { if (e.key === "Enter") handleJump(); });
+  if (jumpYEl) jumpYEl.addEventListener("keydown", (e) => { if (e.key === "Enter") handleJump(); });
+
   window.addEventListener("resize", () => {
-    // If not in placement mode, keep fit-to-view.
-    // If in placement mode, keep camera/scale but clamp.
     resizeCanvas();
     if (!placementMode) {
       fitToView();
@@ -739,17 +898,19 @@ function markKey(x, y) {
     }
     render();
   });
-    // =========================
+
+  // =========================
   // DEV MODE (local testing only)
+  // ?dev=1 shows "Reset local mark (dev)"
   // =========================
 
   const DEV_MODE = new URLSearchParams(window.location.search).get("dev") === "1";
 
   function clearMyLocalMark() {
-    localStorage.removeItem("omm_has_mark");
-    localStorage.removeItem("omm_mark_x");
-    localStorage.removeItem("omm_mark_y");
-    localStorage.removeItem("omm_mark_color");
+    localStorage.removeItem(LS_HAS);
+    localStorage.removeItem(LS_X);
+    localStorage.removeItem(LS_Y);
+    localStorage.removeItem(LS_COLOR);
   }
 
   if (DEV_MODE) {
@@ -771,5 +932,4 @@ function markKey(x, y) {
     const panel = document.querySelector(".info-panel");
     if (panel) panel.appendChild(link);
   }
-
 })();
