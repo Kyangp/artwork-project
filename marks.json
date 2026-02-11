@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "grid": { "cols": 1000, "rows": 1000 },
+  "grid": { "cols": 1250, "rows": 800 },
   "marks": [
     { "x": 10, "y": 12, "color": "#ffd24d" },
     { "x": 11, "y": 12, "color": "#4da6ff" },

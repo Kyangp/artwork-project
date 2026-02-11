@@ -185,6 +185,12 @@ function markKey(x, y) {
    Two-step placement + local persistence + canonical blocking
 ========================= */
 
+/* =========================
+   CANVAS PAGE LOGIC (canvas.html)
+   Two-step placement + local persistence + canonical blocking
+   + CAMERA (viewport) with click-drag panning
+========================= */
+
 (async function initCanvasPage() {
   const canvas = document.getElementById("art-canvas");
   const confirmBtnEl = document.getElementById("confirm-btn");
@@ -204,15 +210,26 @@ function markKey(x, y) {
   let chosenColor = localStorage.getItem("omm_color") || "#f2f2f2";
 
   // Local state
-  let hoverCell = null;
-  let selectedCell = null;
+  let hoverCell = null;     // world coords
+  let selectedCell = null;  // world coords
   let hasPlacedMyMark = false;
 
-  // Marks:
-  // - canonicalMarks = read-only, loaded from marks.json
-  // - localMarks = your personal placed mark (persisted)
+  // Canonical + local marks (world coords)
   const canonicalMarks = new Map();
   const localMarks = new Map();
+
+  // Grid bounds (default until marks.json loads)
+  let GRID_COLS = 1250;
+  let GRID_ROWS = 800;
+
+  // Camera (top-left world cell currently shown)
+  let cameraX = 0;
+  let cameraY = 0;
+
+  // Panning state
+  let isPanning = false;
+  let panStartMouse = null;
+  let panStartCamera = null;
 
   // ---- Local persistence keys ----
   const LS_HAS = "omm_has_mark";
@@ -220,11 +237,33 @@ function markKey(x, y) {
   const LS_Y = "omm_mark_y";
   const LS_COLOR = "omm_mark_color";
 
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function visibleCols() {
+    return Math.ceil(canvas.width / cellSize);
+  }
+
+  function visibleRows() {
+    return Math.ceil(canvas.height / cellSize);
+  }
+
+  function clampCamera() {
+    // Prevent panning outside the world.
+    // cameraX/Y represent the world cell at the top-left of the screen.
+    const maxCamX = Math.max(0, GRID_COLS - visibleCols());
+    const maxCamY = Math.max(0, GRID_ROWS - visibleRows());
+    cameraX = clamp(cameraX, 0, maxCamX);
+    cameraY = clamp(cameraY, 0, maxCamY);
+  }
+
   function resizeCanvas() {
     const parent = canvas.parentElement;
     const rect = parent.getBoundingClientRect();
     canvas.width = Math.floor(rect.width);
     canvas.height = Math.floor(rect.height);
+    clampCamera();
   }
 
   function drawBackground() {
@@ -236,6 +275,7 @@ function markKey(x, y) {
     ctx.strokeStyle = "rgba(255,255,255,0.06)";
     ctx.lineWidth = 1;
 
+    // Grid lines in screen space
     for (let x = 0; x <= canvas.width; x += cellSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -250,30 +290,8 @@ function markKey(x, y) {
     }
   }
 
-  function drawMarks(map) {
-    for (const [key, color] of map.entries()) {
-      const [xStr, yStr] = key.split(",");
-      const x = Number(xStr);
-      const y = Number(yStr);
-
-      ctx.fillStyle = color;
-      ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-    }
-  }
-
-  function drawSelectedCell() {
-    if (!selectedCell) return;
-
-    const x = selectedCell.x * cellSize;
-    const y = selectedCell.y * cellSize;
-
-    ctx.fillStyle = hexToRgba(chosenColor, 0.35);
-    ctx.fillRect(x, y, cellSize, cellSize);
-
-    ctx.strokeStyle = "rgba(255,255,255,0.75)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
-    ctx.lineWidth = 1;
+  function markKey(x, y) {
+    return `${x},${y}`;
   }
 
   function cellTaken(x, y) {
@@ -281,21 +299,76 @@ function markKey(x, y) {
     return canonicalMarks.has(key) || localMarks.has(key);
   }
 
+  function worldToScreen(x, y) {
+    return {
+      sx: (x - cameraX) * cellSize,
+      sy: (y - cameraY) * cellSize,
+    };
+  }
+
+  function screenToWorld(mouseX, mouseY) {
+    return {
+      x: Math.floor(mouseX / cellSize) + cameraX,
+      y: Math.floor(mouseY / cellSize) + cameraY,
+    };
+  }
+
+  function drawMarks(map) {
+    for (const [key, color] of map.entries()) {
+      const [xStr, yStr] = key.split(",");
+      const x = Number(xStr);
+      const y = Number(yStr);
+
+      // Convert to screen position using camera
+      const { sx, sy } = worldToScreen(x, y);
+
+      // Skip if not visible on screen
+      if (sx + cellSize < 0 || sy + cellSize < 0 || sx > canvas.width || sy > canvas.height) continue;
+
+      ctx.fillStyle = color;
+      ctx.fillRect(sx, sy, cellSize, cellSize);
+    }
+  }
+
+  function hexToRgba(hex, alpha) {
+    const clean = hex.replace("#", "");
+    const r = parseInt(clean.slice(0, 2), 16);
+    const g = parseInt(clean.slice(2, 4), 16);
+    const b = parseInt(clean.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function drawSelectedCell() {
+    if (!selectedCell) return;
+
+    const { sx, sy } = worldToScreen(selectedCell.x, selectedCell.y);
+
+    ctx.fillStyle = hexToRgba(chosenColor, 0.35);
+    ctx.fillRect(sx, sy, cellSize, cellSize);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.75)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(sx + 1, sy + 1, cellSize - 2, cellSize - 2);
+    ctx.lineWidth = 1;
+  }
+
   function drawHoverPreview() {
     if (!hoverCell) return;
     if (hasPlacedMyMark) return;
 
+    // Out of bounds check (world)
+    if (hoverCell.x < 0 || hoverCell.y < 0 || hoverCell.x >= GRID_COLS || hoverCell.y >= GRID_ROWS) return;
+
     if (cellTaken(hoverCell.x, hoverCell.y)) return;
     if (selectedCell && hoverCell.x === selectedCell.x && hoverCell.y === selectedCell.y) return;
 
-    const x = hoverCell.x * cellSize;
-    const y = hoverCell.y * cellSize;
+    const { sx, sy } = worldToScreen(hoverCell.x, hoverCell.y);
 
     ctx.fillStyle = hexToRgba(chosenColor, 0.25);
-    ctx.fillRect(x, y, cellSize, cellSize);
+    ctx.fillRect(sx, sy, cellSize, cellSize);
 
     ctx.strokeStyle = "rgba(255,255,255,0.35)";
-    ctx.strokeRect(x + 0.5, y + 0.5, cellSize - 1, cellSize - 1);
+    ctx.strokeRect(sx + 0.5, sy + 0.5, cellSize - 1, cellSize - 1);
   }
 
   function render() {
@@ -309,33 +382,34 @@ function markKey(x, y) {
 
   function updateCounter() {
     if (!marksCountEl) return;
-
-    // Only canonical marks count as "published" for now
     const publishedCount = canonicalMarks.size;
     marksCountEl.textContent = `${publishedCount.toLocaleString()} / 1,000,000 marks placed`;
   }
 
   function updateHoverCell(event) {
     if (hasPlacedMyMark) return;
+    if (isPanning) return;
 
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-    hoverCell = {
-      x: Math.floor(mouseX / cellSize),
-      y: Math.floor(mouseY / cellSize),
-    };
-
+    hoverCell = screenToWorld(mouseX, mouseY);
     render();
   }
 
   function selectCell() {
     if (hasPlacedMyMark) return;
+    if (isPanning) return; // don’t select while dragging
     if (!hoverCell) return;
 
+    // Out of bounds
+    if (hoverCell.x < 0 || hoverCell.y < 0 || hoverCell.x >= GRID_COLS || hoverCell.y >= GRID_ROWS) {
+      if (confirmNoteEl) confirmNoteEl.textContent = "Outside the artwork bounds.";
+      return;
+    }
+
     if (cellTaken(hoverCell.x, hoverCell.y)) {
-      // optional: tiny feedback
       if (confirmNoteEl) confirmNoteEl.textContent = "That cell is already part of the artwork.";
       return;
     }
@@ -412,19 +486,69 @@ function markKey(x, y) {
     render();
   }
 
+  // ---- PANNING (click-drag) ----
+  function beginPan(event) {
+    // Only left mouse button
+    if (event.button !== 0) return;
+
+    isPanning = true;
+    const rect = canvas.getBoundingClientRect();
+    panStartMouse = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+    panStartCamera = { x: cameraX, y: cameraY };
+  }
+
+  function movePan(event) {
+    if (!isPanning) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mx = event.clientX - rect.left;
+    const my = event.clientY - rect.top;
+
+    const dxPx = mx - panStartMouse.x;
+    const dyPx = my - panStartMouse.y;
+
+    // Convert pixels dragged into cells moved
+    const dxCells = Math.round(dxPx / cellSize);
+    const dyCells = Math.round(dyPx / cellSize);
+
+    // Dragging right should move camera left (so the world follows the hand)
+    cameraX = panStartCamera.x - dxCells;
+    cameraY = panStartCamera.y - dyCells;
+
+    clampCamera();
+    render();
+  }
+
+  function endPan() {
+    isPanning = false;
+    panStartMouse = null;
+    panStartCamera = null;
+  }
+
   // Initial UI state
   confirmBtnEl.classList.add("disabled");
   if (confirmNoteEl) confirmNoteEl.textContent = "Click a cell to choose your location.";
 
-  // Load canonical dataset first
+  // Load canonical dataset first (also reads grid size)
   try {
-    const data = await loadCanonicalMarks();
+    const res = await fetch("./marks.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`Failed to load marks.json (${res.status})`);
+    const data = await res.json();
+
+    if (data.grid && Number.isFinite(data.grid.cols) && Number.isFinite(data.grid.rows)) {
+      GRID_COLS = data.grid.cols;
+      GRID_ROWS = data.grid.rows;
+    }
+
     for (const m of data.marks || []) {
       canonicalMarks.set(markKey(m.x, m.y), m.color || "#f2f2f2");
     }
   } catch (err) {
     console.warn(err);
-    // If it fails, canvas still works, but without canonical blocking.
+    // If it fails, canvas still works, but without canonical blocking/bounds.
   }
 
   // Load your persisted local mark (if any)
@@ -439,7 +563,12 @@ function markKey(x, y) {
   canvas.addEventListener("click", selectCell);
   confirmBtnEl.addEventListener("click", confirmPlacement);
 
-  // Init render
+  // Panning events
+  canvas.addEventListener("mousedown", beginPan);
+  window.addEventListener("mousemove", movePan);
+  window.addEventListener("mouseup", endPan);
+
+  // Init
   resizeCanvas();
   updateCounter();
   render();
