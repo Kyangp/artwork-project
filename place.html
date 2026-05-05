@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Biggest collaborative artwork</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preparation — One Million Marks</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -22,49 +22,74 @@
 
   <main class="place-page">
     <div class="place-card">
-      <h1>Before you place your mark</h1>
+
+      <p class="section-label">II — Preparation</p>
+
+      <h1>You may place one mark.</h1>
+      <h2 class="subtle">It cannot be changed or removed.</h2>
+
       <p class="place-subtitle">
-        This is a permanent collaborative artwork. One decision. One mark. No edits.
+        Take a moment. Your mark will remain on the canvas alongside the marks of others — 
+        for as long as the artwork exists. There is no edit, no undo, no second attempt.
       </p>
 
-      <ul class="place-rules">
-        <li>You can place <strong>one</strong> mark.</li>
-        <li>Once placed, it <strong>cannot</strong> be changed or removed.</li>
-        <li>When the millionth mark is placed, the artwork is complete forever.</li>
-      </ul>
+      <!-- COLOR -->
+      <h3 class="minor-label">I. Choose a color</h3>
 
-      <h2 style="margin-top:28px;">Choose your tier</h2>
+      <div class="color-picker" id="color-picker">
+        <button class="color-swatch selected" data-color="#1a1a1a" title="Ink"></button>
+        <button class="color-swatch" data-color="#e8e4dc" title="Bone"></button>
+        <button class="color-swatch" data-color="#8a8782" title="Ash"></button>
+        <button class="color-swatch" data-color="#9c7a4f" title="Ochre"></button>
+        <button class="color-swatch" data-color="#7a3e3e" title="Madder"></button>
+        <button class="color-swatch" data-color="#3f4a63" title="Indigo"></button>
+        <button class="color-swatch" data-color="#4e6b63" title="Verdigris"></button>
+      </div>
+
+      <!-- TIERS -->
+      <h3 class="minor-label">II. Registration</h3>
 
       <div class="tier-row" id="tier-row">
-        <button class="tier selected" data-tier="0.99">€0.99 — Anonymous mark</button>
-        <button class="tier" data-tier="1.99">€1.99 — Mark + certificate</button>
-        <button class="tier" data-tier="4.99">€4.99 — Name on hover + certificate</button>
+        <button class="tier selected" data-tier="0.99">
+          <div>
+            <strong>Basic</strong>
+            <p>A single mark. Anonymous.</p>
+          </div>
+        </button>
+
+        <button class="tier" data-tier="1.99">
+          <div>
+            <strong>Recorded</strong>
+            <p>Your mark is archived with provenance.</p>
+          </div>
+        </button>
+
+        <button class="tier" data-tier="4.99">
+          <div>
+            <strong>Inscribed</strong>
+            <p>Your mark is recorded and linked to your name.</p>
+          </div>
+        </button>
       </div>
 
-      <h2 style="margin-top:28px;">Choose a color</h2>
-
-      <div class="color-picker" id="color-picker" aria-label="Choose a color">
-        <button class="color-swatch selected" data-color="#f2f2f2" aria-label="White"></button>
-        <button class="color-swatch" data-color="#ff4d4d" aria-label="Red"></button>
-        <button class="color-swatch" data-color="#ffd24d" aria-label="Yellow"></button>
-        <button class="color-swatch" data-color="#4dff88" aria-label="Green"></button>
-        <button class="color-swatch" data-color="#4da6ff" aria-label="Blue"></button>
-        <button class="color-swatch" data-color="#b84dff" aria-label="Purple"></button>
-      </div>
-
-      <div class="place-confirm" style="margin-top:20px;">
+      <!-- CONFIRM -->
+      <div class="place-confirm">
         <input id="confirm" type="checkbox" />
-        <label for="confirm">I understand this mark is permanent.</label>
+        <label for="confirm">
+          I understand this action is permanent.
+        </label>
       </div>
 
+      <!-- ACTIONS -->
       <div class="place-actions">
-        <a class="link-muted" href="index.html">Back</a>
+        <a class="link-muted" href="index.html">Return</a>
         <button id="continueBtn" class="primary-button disabled">Continue</button>
       </div>
 
       <p class="place-warning">
-        Take a second. Choose carefully. Once you place it, it stays.
+        Choose carefully. Once placed, your mark becomes part of the work forever.
       </p>
+
     </div>
   </main>
 
