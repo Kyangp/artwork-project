@@ -441,3 +441,110 @@ p {
   background: #1a1a1a;
   border: 1px solid var(--border-subtle);
 }
+
+/* =========================
+   MOBILE POLISH
+========================= */
+
+@media (max-width: 700px) {
+  body {
+    font-size: 15px;
+  }
+
+  .navbar {
+    padding: 16px 18px;
+    align-items: center;
+  }
+
+  .nav-right a {
+    margin-left: 12px;
+    font-size: 13px;
+  }
+
+  h1 {
+    font-size: 34px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-canvas {
+    min-height: 48vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .hero-text {
+    padding: 42px 22px;
+  }
+
+  .info-panel {
+    margin: 42px auto;
+    padding: 0 20px;
+  }
+
+  .canvas-area {
+    height: 58vh;
+  }
+
+  .place-page {
+    padding: 48px 16px;
+  }
+
+  .place-card {
+    padding: 28px 22px;
+  }
+
+  .color-picker {
+    flex-wrap: wrap;
+  }
+
+  .tier {
+    padding: 14px 12px;
+  }
+
+  .place-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .place-actions .primary-button {
+    width: 100%;
+  }
+
+  .coord-jump {
+    gap: 8px;
+  }
+
+  .coord-jump input {
+    width: 72px;
+  }
+
+  .secondary-button {
+    flex: 1;
+  }
+
+  .essay-section {
+    margin: 80px auto;
+    padding: 0 22px;
+  }
+
+  .essay-section h2 {
+    font-size: 30px;
+  }
+
+  .essay-section p:not(.section-label) {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .footer {
+    margin-top: 70px;
+  }
+}
