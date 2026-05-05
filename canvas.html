@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Place your mark — One Million Marks</title>
   <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
 </head>
 
 <body>
-  <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-left">
       <strong>One Million Marks</strong>
@@ -16,52 +16,55 @@
     <div class="nav-right">
       <a href="index.html">Home</a>
       <a href="about.html">About</a>
-      <a href="index.html#how">How it works</a>
     </div>
   </nav>
 
   <main class="main-layout">
-    <!-- Canvas -->
     <section class="canvas-area">
       <canvas id="art-canvas"></canvas>
     </section>
 
-    <!-- Placement UI -->
     <section class="info-panel">
+      <p class="section-label">III — Placement</p>
+
       <h1>Place your mark</h1>
-      <p id="canvas-subtitle">Choose a spot. One mark only.</p>
+      <p id="canvas-subtitle">
+        The full artwork is shown first. When you are ready, enter the canvas and choose one position.
+      </p>
 
       <div class="progress">
         <span id="marks-count">0 / 1,000,000 marks placed</span>
       </div>
-      
-      <div class="coord-jump">
-  <input id="jump-x" type="number" min="0" placeholder="x" />
-  <input id="jump-y" type="number" min="0" placeholder="y" />
-  <button id="jump-btn" class="secondary-button" type="button">Go</button>
-  <button id="copy-link-btn" class="secondary-button" type="button">Copy link</button>
-</div>
 
-<p class="tiny-note" id="jump-note">Use coordinates to revisit a place in the artwork.</p>
+      <div class="coord-jump">
+        <input id="jump-x" type="number" min="0" placeholder="x" />
+        <input id="jump-y" type="number" min="0" placeholder="y" />
+        <button id="jump-btn" class="secondary-button" type="button">Visit</button>
+        <button id="copy-link-btn" class="secondary-button" type="button">Copy mark link</button>
+      </div>
+
+      <p class="tiny-note" id="jump-note">
+        Coordinates allow a place in the artwork to be revisited.
+      </p>
 
       <button id="begin-btn" class="primary-button" type="button">Begin placement</button>
 
-      <button id="confirm-btn" class="primary-button disabled" type="button">Confirm placement</button>
-      <p class="tiny-note" id="confirm-note">Click a cell to choose your location.</p>
+      <button id="confirm-btn" class="primary-button disabled" type="button">
+        Make this mark permanent
+      </button>
 
+      <p class="tiny-note" id="confirm-note">
+        Begin placement to enter the artwork.
+      </p>
 
       <p id="status-text" class="status-text"></p>
       <p id="coords-text" class="coords-text"></p>
       <p id="archive-text" class="coords-text"></p>
-
     </section>
 
-    <section class="footer">
-      <footer>
-        <p>© 2026 — One Million Marks</p>
-        <p class="footer-meta">A collaborative artwork initiated by Kyan Gregorc Planinc</p>
-      </footer>
-    </section>
+    <footer class="footer">
+      <p>© 2026 — One Million Marks</p>
+    </footer>
   </main>
 
   <script src="script.js"></script>
