@@ -424,3 +424,20 @@ p {
     text-align: center;
   }
 }
+
+.mark-preview {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+#mark-preview-dot {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  background: #1a1a1a;
+  border: 1px solid var(--border-subtle);
+}

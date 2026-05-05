@@ -26,6 +26,7 @@ function markKey(x, y) {
 
 /* =========================
    PLACE PAGE LOGIC (place.html)
+   With color preview
 ========================= */
 
 (function initPlacePage() {
@@ -37,11 +38,18 @@ function markKey(x, y) {
   const swatches = colorPicker ? Array.from(colorPicker.querySelectorAll(".color-swatch")) : [];
   const tiers = tierRow ? Array.from(tierRow.querySelectorAll(".tier")) : [];
 
+  const previewDot = document.getElementById("mark-preview-dot");
+
   // Only run on place page
   if (!continueBtn || !confirm || (!swatches.length && !tiers.length)) return;
 
   let selectedTier = "0.99";
-  let selectedColor = "#f2f2f2";
+  let selectedColor = "#1a1a1a";
+
+  // Set initial preview color
+  if (previewDot) {
+    previewDot.style.background = selectedColor;
+  }
 
   // Paint swatch backgrounds
   swatches.forEach(btn => {
@@ -57,12 +65,17 @@ function markKey(x, y) {
     });
   });
 
-  // Color selection
+  // Color selection + preview update
   swatches.forEach(btn => {
     btn.addEventListener("click", () => {
       swatches.forEach(b => b.classList.remove("selected"));
       btn.classList.add("selected");
+
       selectedColor = btn.getAttribute("data-color");
+
+      if (previewDot) {
+        previewDot.style.background = selectedColor;
+      }
     });
   });
 
@@ -71,10 +84,11 @@ function markKey(x, y) {
     if (confirm.checked) continueBtn.classList.remove("disabled");
     else continueBtn.classList.add("disabled");
   }
+
   confirm.addEventListener("change", syncContinueState);
   syncContinueState();
 
-  // Continue -> store choices -> go to canvas page
+  // Continue → store choices → go to canvas
   continueBtn.addEventListener("click", () => {
     if (!confirm.checked) return;
 

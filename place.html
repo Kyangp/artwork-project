@@ -17,6 +17,7 @@
     </div>
     <div class="nav-right">
       <a href="index.html">Home</a>
+      <a href="about.html">About</a>
     </div>
   </nav>
 
@@ -29,65 +30,60 @@
       <h2 class="subtle">It cannot be changed or removed.</h2>
 
       <p class="place-subtitle">
-        Take a moment. Your mark will remain on the canvas alongside the marks of others — 
-        for as long as the artwork exists. There is no edit, no undo, no second attempt.
+        Take a moment before continuing. Your mark will remain on the canvas alongside the marks of others.
+        There is no edit, no undo, and no second attempt.
       </p>
 
-      <!-- COLOR -->
       <h3 class="minor-label">I. Choose a color</h3>
 
       <div class="color-picker" id="color-picker">
-        <button class="color-swatch selected" data-color="#1a1a1a" title="Ink"></button>
-        <button class="color-swatch" data-color="#e8e4dc" title="Bone"></button>
-        <button class="color-swatch" data-color="#8a8782" title="Ash"></button>
-        <button class="color-swatch" data-color="#9c7a4f" title="Ochre"></button>
-        <button class="color-swatch" data-color="#7a3e3e" title="Madder"></button>
-        <button class="color-swatch" data-color="#3f4a63" title="Indigo"></button>
-        <button class="color-swatch" data-color="#4e6b63" title="Verdigris"></button>
+        <button class="color-swatch selected" data-color="#1a1a1a" title="Ink" aria-label="Ink"></button>
+        <button class="color-swatch" data-color="#e8e4dc" title="Bone" aria-label="Bone"></button>
+        <button class="color-swatch" data-color="#8a8782" title="Ash" aria-label="Ash"></button>
+        <button class="color-swatch" data-color="#9c7a4f" title="Ochre" aria-label="Ochre"></button>
+        <button class="color-swatch" data-color="#7a3e3e" title="Madder" aria-label="Madder"></button>
+        <button class="color-swatch" data-color="#3f4a63" title="Indigo" aria-label="Indigo"></button>
+        <button class="color-swatch" data-color="#4e6b63" title="Verdigris" aria-label="Verdigris"></button>
       </div>
 
-      <!-- TIERS -->
-      <h3 class="minor-label">II. Registration</h3>
+      <div class="mark-preview">
+        <span id="mark-preview-dot"></span>
+        <p>Your mark will appear in the selected color.</p>
+      </div>
+
+      <h3 class="minor-label">II. Choose registration</h3>
 
       <div class="tier-row" id="tier-row">
         <button class="tier selected" data-tier="0.99">
-          <div>
-            <strong>Basic</strong>
-            <p>A single mark. Anonymous.</p>
-          </div>
+          <strong>Single Mark</strong>
+          <p>One mark, placed anonymously within the artwork.</p>
         </button>
 
         <button class="tier" data-tier="1.99">
-          <div>
-            <strong>Recorded</strong>
-            <p>Your mark is archived with provenance.</p>
-          </div>
+          <strong>Recorded Mark</strong>
+          <p>One mark with a recorded placement certificate.</p>
         </button>
 
         <button class="tier" data-tier="4.99">
-          <div>
-            <strong>Inscribed</strong>
-            <p>Your mark is recorded and linked to your name.</p>
-          </div>
+          <strong>Inscribed Mark</strong>
+          <p>One mark with recorded provenance and name inscription.</p>
         </button>
       </div>
 
-      <!-- CONFIRM -->
       <div class="place-confirm">
         <input id="confirm" type="checkbox" />
         <label for="confirm">
-          I understand this action is permanent.
+          I understand that once my mark is placed, it cannot be changed or removed.
         </label>
       </div>
 
-      <!-- ACTIONS -->
       <div class="place-actions">
         <a class="link-muted" href="index.html">Return</a>
         <button id="continueBtn" class="primary-button disabled">Continue</button>
       </div>
 
       <p class="place-warning">
-        Choose carefully. Once placed, your mark becomes part of the work forever.
+        Choose carefully. The next step is the placement of your mark.
       </p>
 
     </div>
